@@ -1,6 +1,8 @@
 // index.js - Router principal actualizado
-const planesCuentasSimulacionHandler = require('./handlers/planesCuentasSimulacionHandler');
-const detallePlanesCuentasSimulacionHandler = require('./handlers/detallePlanesCuentasSimulacionHandler');
+const planesCuentasHandler = require('./handlers/planesCuentasSimulacionHandler');
+const detallePlanesCuentasHandler = require('./handlers/detallePlanesCuentasSimulacionHandler');
+const cuentasRelojCicloHandler = require('./handlers/cuentasRelojCicloSimulacionHandler');
+const detalleCuentasRelojCicloHandler = require('./handlers/detalleCuentasRelojCicloSimulacionHandler');
 
 
 exports.handler = async (event) => {
@@ -12,10 +14,16 @@ exports.handler = async (event) => {
 // Routing 
 // ------ SIMULACION ----  //
 if (path.includes('/planesCuentasSimulacion') && httpMethod === 'POST') {
-  return await planesCuentasSimulacionHandler.handler(event);
+  return await planesCuentasHandler.handler(event);
 }
 if (path.includes('/detallePlanesCuentasSimulacion') && httpMethod === 'POST') {
-  return await detallePlanesCuentasSimulacionHandler.handler(event);
+  return await detallePlanesCuentasHandler.handler(event);
+}
+if (path.includes('/cuentasRelojCicloSimulacion') && httpMethod === 'POST') {
+  return await cuentasRelojCicloHandler.handler(event);
+}
+if (path.includes('/detalleCuentasRelojCiclo') && httpMethod === 'POST') {
+  return await detalleCuentasRelojCicloHandler.handler(event);
 }
 else {
     return {
