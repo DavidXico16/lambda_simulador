@@ -16,7 +16,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: "lambdasttp"
-        S3Key: "Simulador/js006.zip"
+        S3Key: "Simulador/js008.zip"
       Timeout: 30
       Environment:
         Variables:
@@ -233,6 +233,94 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Access-Control-Allow-Methods: true
 
+  # ==================== SEGMENTACION  ====================
+  SegmentacionResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: 'segmentacionSimulacion'
+
+  SegmentacionMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref SegmentacionResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostgresLambda.Arn}/invocations'
+
+  SegmentacionOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref SegmentacionResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+  # ==================== DETALLE SEGMENTACION  ====================
+  DetalleSegmentacionResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: 'detalleSegmentacionSimulacion'
+
+  DetalleSegmentacionMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref DetalleSegmentacionResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostgresLambda.Arn}/invocations'
+
+  DetalleSegmentacionOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref DetalleSegmentacionResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
   # Configuración CORS global
   GatewayResponse:
     Type: AWS::ApiGateway::GatewayResponse
@@ -255,6 +343,10 @@ Resources:
       - CuentasRelojCiclosSimulacionOptionsMethod
       - DetalleCuentasRelojCiclosSimulacionMethod
       - DetalleCuentasRelojCiclosSimulacionOptionsMethod
+      - SegmentacionMethod
+      - SegmentacionOptionsMethod
+      - DetalleSegmentacionMethod
+      - DetalleSegmentacionOptionsMethod
     Properties:
       RestApiId: !Ref ApiGateway
       StageName: !Ref EnvironmentName
@@ -276,6 +368,14 @@ Outputs:
   DetalleCuentasRelojCicloApiUrl:
     Description: 'URL del endpoint de detalle Cuentas Reloj y Ciclos'
     Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/detalleCuentasRelojCiclo'
+
+  SegmentacionApiUrl:
+    Description: 'URL del endpoint de segmentacion'
+    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/segmentacionSimulacion'
+
+  DetalleSegmentacionApiUrl:
+    Description: 'URL del endpoint de detalle segmentacion'
+    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/detalleSegmentacionSimulacion'
 
   ApiGatewayId:
     Description: 'ID del API Gateway'
