@@ -12,16 +12,15 @@ const dbConfig = {
 };
 
 exports.handler = async (event) => {
-  console.log('Datos detalles Quitas, idFlujo : ', JSON.stringify(event, null, 2));
+  console.log('SimuladorPlanesCuentas GET - Event:', JSON.stringify(event, null, 2));
 
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token'
   };
 
-  // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -30,21 +29,19 @@ exports.handler = async (event) => {
     };
   }
 
-  // Solo permitir POST
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({ error: 'Método no permitido' })
+      body: JSON.stringify({ error: 'Método no permitido. Usa POST.' })
     };
   }
 
-  // Validar cuerpo JSON
   let body;
   try {
     body = JSON.parse(event.body);
   } catch (error) {
-    console.log("Error al parsear body:", error);
+    console.log('Error al parsear JSON:', error);
     return {
       statusCode: 400,
       headers,
@@ -53,11 +50,11 @@ exports.handler = async (event) => {
   }
 
   // Validar campo requerido
-  if (!body.idFlujo) {
+  if (!body.idflujo) {
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: 'Campo requerido: idFlujo' })
+      body: JSON.stringify({ error: 'Campo requerido: idflujo' })
     };
   }
 
@@ -66,37 +63,49 @@ exports.handler = async (event) => {
   try {
     await client.connect();
 
+    // Consulta a la tabla simulador_planes_cuentas
     const query = `
-      SELECT *
-      FROM datos_quitas
+      SELECT 
+        id_promociones_ttp AS idflujo,
+        planes,
+        cuentas,
+        sub,
+        nombre_editor AS nombreEditor,
+        status,
+        fecha_mod
+      FROM simulador_planes_cuentas
       WHERE id_promociones_ttp = $1
     `;
 
-    const result = await client.query(query, [body.idFlujo]);
+    const result = await client.query(query, [body.idflujo]);
 
     if (!result.rows || result.rows.length === 0) {
       return {
         statusCode: 404,
         headers,
         body: JSON.stringify({
-          message: `No se encontraron registros en datos_quitas para idFlujo: ${body.idFlujo}`,
+          message: `No se encontraron registros en simulador_planes_cuentas para idflujo: ${body.idflujo}`,
           data: {}
         })
       };
     }
 
+    // Convertimos los JSONB a objetos
+    const row = result.rows[0];
+    if (typeof row.planes === 'string') row.planes = JSON.parse(row.planes);
+    if (typeof row.cuentas === 'string') row.cuentas = JSON.parse(row.cuentas);
+
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        message: 'Datos obtenidos exitosamente de Quitas',
-        data: result.rows[0]
+        message: 'Datos obtenidos exitosamente de simulador_planes_cuentas',
+        data: row
       })
     };
 
   } catch (error) {
-    console.error('Error en POST datos_quitas por el idFlujo:', error);
-
+    console.error('Error al consultar simulador_planes_cuentas:', error);
     return {
       statusCode: 500,
       headers,
