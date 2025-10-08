@@ -5,6 +5,7 @@ const cuentasRelojCicloHandler = require('./handlers/cuentasRelojCicloSimulacion
 const detalleCuentasRelojCicloHandler = require('./handlers/detalleCuentasRelojCicloSimulacionHandler');
 const segmentacionSimulacionHandlerjs = require('./handlers/segmentacionHandler');
 const detalleSegmentacionSimulacionHandlerjs = require('./handlers/detalleSegmentacionHandler');
+const grafoSimuladorHandler = require('./handlers/grafoSimuladorHandler')
 
 
 exports.handler = async (event) => {
@@ -32,6 +33,9 @@ if (path.includes('/segmentacionSimulacion') && httpMethod === 'POST') {
 }
 if (path.includes('/detalleSegmentacionSimulacion') && httpMethod === 'POST') {
   return await detalleSegmentacionSimulacionHandlerjs.handler(event);
+}
+if (path.includes('/grafoSimulador') && httpMethod === 'POST') {
+  return await grafoSimuladorHandler.handler(event);
 }
 else {
     return {
