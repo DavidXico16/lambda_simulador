@@ -7,7 +7,14 @@ const handlers = {
   'POST:/detalleSegmentacionSimulacion': require('./handlers/detalleSegmentacionHandler'),
   'POST:/grafoSimulador': require('./handlers/grafoSimuladorHandler'),
   'POST:/validacionUsuario': require('./handlers/validacionUsuarioHandler'),
-  'POST:/aprobacionUsuario': require('./handlers/aprobacionesUsuariosHandler')
+  'POST:/aprobacionUsuario': require('./handlers/aprobacionesUsuariosHandler'),
+  'POST:/detalleAprobacionUsuarios': require('./handlers/detalleAprobacionesUsuariosHandler'),
+
+  // CRUD de perfilUsuarios
+  'POST:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
+  'GET:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
+  'PUT:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
+  'DELETE:/perfilUsuarios': require('./handlers/crudUsuariosHandler')
 };
 
 exports.handler = async (event) => {
@@ -16,9 +23,18 @@ exports.handler = async (event) => {
   const path = event.path?.trim() || '';
   const httpMethod = event.httpMethod?.toUpperCase() || '';
 
-  //coincidencia exacta
-  const key = `${httpMethod}:${path}`;
-  const handler = handlers[key];
+  // Coincidencia exacta
+  let key = `${httpMethod}:${path}`;
+  let handler = handlers[key];
+
+  // 🟢 Manejo de ruta dinámica GET /perfilUsuarios/:no_empleado
+  if (!handler && httpMethod === 'GET' && path.startsWith('/perfilUsuarios/')) {
+    key = 'GET:/perfilUsuarios';
+    handler = handlers[key];
+    // Agregamos el parámetro a event.pathParameters
+    const parts = path.split('/');
+    event.pathParameters = { noEmpleado: parts[2] }; // Ejemplo: /perfilUsuarios/65012345
+  }
 
   if (handler) {
     console.log(`Routing to ${key}`);
@@ -27,27 +43,19 @@ exports.handler = async (event) => {
 
   return {
     statusCode: 404,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token'
-    },
+    headers: defaultHeaders(),
     body: JSON.stringify({
       error: 'Ruta no encontrada',
       path,
       method: httpMethod
     })
   };
-
-  
 };
-
 
 const defaultHeaders = () => ({
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers':
     'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token'
 });

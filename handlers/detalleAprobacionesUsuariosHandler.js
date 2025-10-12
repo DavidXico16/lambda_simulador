@@ -13,33 +13,44 @@ exports.handler = async (event) => {
   await client.connect();
 
   try {
-    // Obtener query params
-    const queryParams = event.queryStringParameters || {};
-    const { idFlujo, no_empleado } = queryParams;
+    const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+    const { idFlujo } = body;
 
-    let query = 'SELECT * FROM aprobaciones_promociones';
-    const values = [];
-    const conditions = [];
-
-    if (idFlujo) {
-      conditions.push(`id_promociones_ttp = $${values.length + 1}`);
-      values.push(idFlujo);
+    //Validar idFlujo
+    if (!idFlujo) {
+      return response(400, { error: 'El parámetro "idFlujo" es obligatorio' });
     }
 
-    if (no_empleado) {
-      conditions.push(`no_empleado = $${values.length + 1}`);
-      values.push(no_empleado);
+
+    //Buscar apobaciones por idFlujo
+    const query = `
+      SELECT 
+        ap.id_promociones_ttp AS idFlujo,
+        ap.no_empleado,
+        pu.nombre,
+        pu.perfil,
+        pu.area,
+        ap.decision,
+        ap.comentarios,
+        ap.fecha_decision
+      FROM aprobaciones_promociones ap
+      INNER JOIN perfil_usuarios pu ON ap.no_empleado = pu.no_empleado
+      WHERE ap.id_promociones_ttp = $1
+      ORDER BY ap.fecha_decision DESC;
+    `;
+
+    const result = await client.query(query, [idFlujo]);
+
+    //Validar si hay resultados
+    if (result.rows.length === 0) {
+      return response(404, { message: `No hay aprobaciones para el idFlujo ${idFlujo}` });
     }
 
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    query += ' ORDER BY fecha_decision DESC';
-
-    const result = await client.query(query, values);
-
-    return response(200, { data: result.rows });
+    return response(200, {
+      idFlujo,
+      total_registros: result.rows.length,
+      aprobaciones: result.rows
+    });
 
   } catch (error) {
     console.error('Error en getAprobacionesHandler:', error);
@@ -49,11 +60,10 @@ exports.handler = async (event) => {
   }
 };
 
-// Helper para respuestas JSON con CORS
 function response(statusCode, body) {
   return {
     statusCode,
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*'
     },
