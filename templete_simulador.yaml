@@ -16,7 +16,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: "lambdasttp"
-        S3Key: "Simulador/js021.zip"
+        S3Key: "Simulador/js023.zip"
       Timeout: 30
       Environment:
         Variables:
@@ -497,6 +497,91 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Access-Control-Allow-Methods: true
 
+  # ==================== PERFIL USUARIOS ====================
+  PerfilUsuariosResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: 'perfilUsuarios'
+
+  # POST (crear o actualizar usuario)
+  PerfilUsuariosPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref PerfilUsuariosResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostgresLambda.Arn}/invocations'
+
+  # GET (obtener usuarios o usuario específico)
+  PerfilUsuariosGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref PerfilUsuariosResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostgresLambda.Arn}/invocations'
+
+  # PUT (actualizar usuario)
+  PerfilUsuariosPutMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref PerfilUsuariosResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostgresLambda.Arn}/invocations'
+
+  # DELETE (eliminar usuario)
+  PerfilUsuariosDeleteMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref PerfilUsuariosResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostgresLambda.Arn}/invocations'
+
+  # OPTIONS (CORS)
+  PerfilUsuariosOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref PerfilUsuariosResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
   # Configuración CORS global
   GatewayResponse:
     Type: AWS::ApiGateway::GatewayResponse
@@ -531,6 +616,11 @@ Resources:
       - AprobacionUsuarioOptionsMethod
       - DetalleAprobacionUsuarioMethod
       - DetalleAprobacionUsuarioOptionsMethod
+      - PerfilUsuariosPostMethod
+      - PerfilUsuariosGetMethod
+      - PerfilUsuariosPutMethod
+      - PerfilUsuariosDeleteMethod
+      - PerfilUsuariosOptionsMethod
     Properties:
       RestApiId: !Ref ApiGateway
       StageName: !Ref EnvironmentName
@@ -576,6 +666,11 @@ Outputs:
   DetalleAprobacionUsuarioApiUrl:
     Description: 'URL del endpoint de detalle aprobacion de usuario'
     Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/detalleAprobacionUsuarios'
+
+  PerfilUsuariosApiUrl:
+    Description: 'URL del endpoint CRUD de perfil_usuarios'
+    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/perfilUsuarios'
+
 
   ApiGatewayId:
     Description: 'ID del API Gateway'

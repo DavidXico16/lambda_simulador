@@ -9,7 +9,6 @@ const handlers = {
   'POST:/validacionUsuario': require('./handlers/validacionUsuarioHandler'),
   'POST:/aprobacionUsuario': require('./handlers/aprobacionesUsuariosHandler'),
   'POST:/detalleAprobacionUsuarios': require('./handlers/detalleAprobacionesUsuariosHandler'),
-
   // CRUD de perfilUsuarios
   'POST:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
   'GET:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
@@ -27,7 +26,7 @@ exports.handler = async (event) => {
   let key = `${httpMethod}:${path}`;
   let handler = handlers[key];
 
-  // 🟢 Manejo de ruta dinámica GET /perfilUsuarios/:no_empleado
+  //GET /perfilUsuarios/:no_empleado
   if (!handler && httpMethod === 'GET' && path.startsWith('/perfilUsuarios/')) {
     key = 'GET:/perfilUsuarios';
     handler = handlers[key];
