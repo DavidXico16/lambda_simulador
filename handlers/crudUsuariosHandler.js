@@ -51,7 +51,7 @@ exports.handler = async (event) => {
   }
 };
 
-// 🔹 Crear o actualizar usuario (UPSERT)
+//Crear o actualizar usuario (UPSERT)
 async function crearOActualizarUsuario(client, body) {
   const { noEmpleado, nombre, correo, area, perfil, permisos } = body;
 
@@ -80,14 +80,14 @@ async function crearOActualizarUsuario(client, body) {
   });
 }
 
-// 🔹 Obtener todos los usuarios
+//Obtener todos los usuarios
 async function obtenerTodosUsuarios(client) {
   const query = 'SELECT * FROM perfil_usuarios ORDER BY no_empleado ASC;';
   const result = await client.query(query);
   return response(200, { total: result.rowCount, usuarios: result.rows });
 }
 
-// 🔹 Obtener un usuario por su número de empleado
+// Obtener un usuario en especidico
 async function obtenerUsuarioPorId(client, noEmpleado) {
   const query = 'SELECT * FROM perfil_usuarios WHERE no_empleado = $1;';
   const result = await client.query(query, [noEmpleado]);
@@ -104,7 +104,7 @@ async function actualizarUsuario(client, body) {
   const { no_empleado, nombre, correo, area, perfil, permisos } = body;
 
   if (!no_empleado) {
-    return response(400, { error: 'Debe proporcionar el no_empleado para actualizar.' });
+    return response(400, { error: 'Debe proporcionar el noEmpleado para actualizar.' });
   }
 
   const query = `
@@ -126,7 +126,7 @@ async function actualizarUsuario(client, body) {
   });
 }
 
-// 🔹 Eliminar usuario
+//Eliminar usuario
 async function eliminarUsuario(client, no_empleado) {
   const query = 'DELETE FROM perfil_usuarios WHERE no_empleado = $1 RETURNING *;';
   const result = await client.query(query, [no_empleado]);
@@ -141,7 +141,6 @@ async function eliminarUsuario(client, no_empleado) {
   });
 }
 
-// 🔹 Helper para respuesta estándar
 function response(statusCode, body) {
   return {
     statusCode,
