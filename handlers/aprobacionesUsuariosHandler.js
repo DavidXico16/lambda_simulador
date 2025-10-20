@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     // Validación de campos requeridos
     if (!idFlujo || !numEmpleado || decision === undefined || !comentarios) {
       return response(400, {
-        error: 'Campos requeridos: idFlujo, numEmpleado, decision y comentario'
+        error: 'Campos requeridos: idFlujo, numEmpleado, decision y comentarios'
       });
     }
 
@@ -37,7 +37,7 @@ exports.handler = async (event) => {
 
 
     // Verificar existencia del empleado
-    const empleadoQuery = `SELECT nombre, perfil FROM perfil_usuarios WHERE no_empleado = $1`;
+    const empleadoQuery = `SELECT nombre, perfil, area FROM perfil_usuarios WHERE no_empleado = $1`;
     const empleadoResult = await client.query(empleadoQuery, [numEmpleado]);
 
     if (empleadoResult.rows.length === 0) {
@@ -46,7 +46,7 @@ exports.handler = async (event) => {
       });
     }
 
-    const { nombre, perfil } = empleadoResult.rows[0];
+    const { nombre, perfil, area } = empleadoResult.rows[0];
 
     //Verificar si ya existe una aprobación para este idFlujo + no_empleado
     const checkQuery = `
@@ -64,20 +64,21 @@ exports.handler = async (event) => {
             comentarios = $2,
             perfil = $3,
             nombre = $4,
-            fecha_decision = NOW()
+            fecha_decision = NOW(),
+            area = $7
         WHERE id_promociones_ttp = $5 AND no_empleado = $6
         RETURNING *
       `;
-      result = await client.query(updateQuery, [decision, comentarios, perfil, nombre, idFlujo, numEmpleado]);
+      result = await client.query(updateQuery, [decision, comentarios, perfil, nombre, idFlujo, numEmpleado, area]);
     } else {
       //Si no existe → INSERT
       const insertQuery = `
         INSERT INTO aprobaciones_promociones
-        (id_promociones_ttp, perfil, nombre, no_empleado, decision, comentarios, fecha_decision)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        (id_promociones_ttp, perfil, nombre, no_empleado, decision, comentarios, fecha_decision, area)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
         RETURNING *
       `;
-      result = await client.query(insertQuery, [idFlujo, perfil, nombre, numEmpleado, decision, comentarios]);
+      result = await client.query(insertQuery, [idFlujo, perfil, nombre, numEmpleado, decision, comentarios, area]);
     }
 
     return response(200, {
