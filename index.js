@@ -13,7 +13,10 @@ const handlers = {
   'POST:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
   'GET:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
   'PUT:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
-  'DELETE:/perfilUsuarios': require('./handlers/crudUsuariosHandler')
+  'DELETE:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
+
+  'POST:/addonPlanes': require('./handlers/addoPlanesHandler'),
+  'POST:/detalleAddonPlanes': require('./handlers/detalleAddoPlanesHandler')
 };
 
 exports.handler = async (event) => {
@@ -32,7 +35,7 @@ exports.handler = async (event) => {
     handler = handlers[key];
     // Agregamos el parámetro a event.pathParameters
     const parts = path.split('/');
-    event.pathParameters = { noEmpleado: parts[2] }; // Ejemplo: /perfilUsuarios/65012345
+    event.pathParameters = { noEmpleado: parts[2] };
   }
 
   if (handler) {
