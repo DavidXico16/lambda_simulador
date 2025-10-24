@@ -16,7 +16,10 @@ const handlers = {
   'DELETE:/perfilUsuarios': require('./handlers/crudUsuariosHandler'),
 
   'POST:/addonPlanes': require('./handlers/addoPlanesHandler'),
-  'POST:/detalleAddonPlanes': require('./handlers/detalleAddoPlanesHandler')
+  'POST:/detalleAddonPlanes': require('./handlers/detalleAddoPlanesHandler'),
+  'POST:/getLink': require('./handlers/getLinkHandler'),
+  'POST:/estatusNavegacion': require('./handlers/catalogoNavehacionHandler'),
+  'POST:/getEstatusNavegacion': require('./handlers/getEstatusNavegacionHandler')
 };
 
 exports.handler = async (event) => {
