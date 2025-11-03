@@ -19,7 +19,8 @@ const handlers = {
   'POST:/detalleAddonPlanes': require('./handlers/detalleAddoPlanesHandler'),
   'POST:/getLink': require('./handlers/getLinkHandler'),
   'POST:/estatusNavegacion': require('./handlers/catalogoNavehacionHandler'),
-  'POST:/getEstatusNavegacion': require('./handlers/getEstatusNavegacionHandler')
+  'POST:/getEstatusNavegacion': require('./handlers/getEstatusNavegacionHandler'),
+  'POST:/getSimuladorProgresive': require('./handlers/getSimuladorProgresiveHandler')
 };
 
 exports.handler = async (event) => {
