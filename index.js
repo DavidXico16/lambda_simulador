@@ -20,7 +20,9 @@ const handlers = {
   'POST:/getLink': require('./handlers/getLinkHandler'),
   'POST:/estatusNavegacion': require('./handlers/catalogoNavehacionHandler'),
   'POST:/getEstatusNavegacion': require('./handlers/getEstatusNavegacionHandler'),
-  'POST:/getSimuladorProgresive': require('./handlers/getSimuladorProgresiveHandler')
+  'POST:/getSimuladorProgresive': require('./handlers/getSimuladorProgresiveHandler'),
+  'POST:/getResultadoCompra': require('./handlers/getResultadoCompraHandler'),
+  'POST:/getErroresProcesamiento': require('./handlers/getErroresProcesamientoHandler')
 };
 
 exports.handler = async (event) => {
