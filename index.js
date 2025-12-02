@@ -23,6 +23,7 @@ const handlers = {
   'POST:/getSimuladorProgresive': require('./handlers/getSimuladorProgresiveHandler'),
   'POST:/getResultadoCompra': require('./handlers/getResultadoCompraHandler'),
   'POST:/getErroresProcesamiento': require('./handlers/getErroresProcesamientoHandler')
+  
 };
 
 exports.handler = async (event) => {
