@@ -22,7 +22,9 @@ const handlers = {
   'POST:/getEstatusNavegacion': require('./handlers/getEstatusNavegacionHandler'),
   'POST:/getSimuladorProgresive': require('./handlers/getSimuladorProgresiveHandler'),
   'POST:/getResultadoCompra': require('./handlers/getResultadoCompraHandler'),
-  'POST:/getErroresProcesamiento': require('./handlers/getErroresProcesamientoHandler')
+  'POST:/getErroresProcesamiento': require('./handlers/getErroresProcesamientoHandler'),
+
+  'POST:/getPlanesPorDia': require('./handlers/PlanesPorDiaHandler')
   
 };
 
