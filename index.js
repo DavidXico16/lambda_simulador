@@ -24,7 +24,9 @@ const handlers = {
   'POST:/getResultadoCompra': require('./handlers/getResultadoCompraHandler'),
   'POST:/getErroresProcesamiento': require('./handlers/getErroresProcesamientoHandler'),
 
-  'POST:/getPlanesPorDia': require('./handlers/PlanesPorDiaHandler')
+  'POST:/getPlanesPorDia': require('./handlers/PlanesPorDiaHandler'),
+  'POST:/getFechaPlanesCuentas': require('./handlers/getFechaPlanesCuentasHandler')
+
   
 };
 

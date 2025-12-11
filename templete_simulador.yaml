@@ -15,12 +15,12 @@ Resources:
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        S3Bucket: "lambdas-ttp"
-        S3Key: "simulador/js003.zip"
+        S3Bucket: "lambdasttp"
+        S3Key: "Simulador/js006.zip"
       Timeout: 30
       Environment:
         Variables:
-          DB_HOST: 'database-1-instance-1.cmtmyua0wk2k.us-east-1.rds.amazonaws.com'
+          DB_HOST: 'database-1-instance-1.czoco8oa6f0w.us-east-1.rds.amazonaws.com'
           DB_PORT: '5432'
           DB_NAME: 'postgres'
           DB_USER: 'postgres'
@@ -980,6 +980,50 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Access-Control-Allow-Methods: true
 
+# ==================== GET FECHA SIMULADOR PLANES CUENTAS  ====================
+  GeFechaPlanesResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: 'getFechaPlanesCuentas'
+
+  GeFechaPlanesMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref GeFechaPlanesResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostgresLambda.Arn}/invocations'
+
+  GeFechaPlanesOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref GeFechaPlanesResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
   # Configuración CORS global
   GatewayResponse:
     Type: AWS::ApiGateway::GatewayResponse
@@ -1037,6 +1081,8 @@ Resources:
       - ErroresProcesamientoOptionsMethod
       - GetPlanesPorDiaMethod
       - GetPlanesPorDiaOptionsMethod
+      - GeFechaPlanesMethod
+      - GeFechaPlanesOptionsMethod
     Properties:
       RestApiId: !Ref ApiGateway
       StageName: !Ref EnvironmentName
@@ -1119,6 +1165,10 @@ Outputs:
     Description: 'URL del endpoint para datos de simulador progresive'
     Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/getPlanesPorDia' 
 
+
+  GetFechaPlanesCuentasApiUrl:
+    Description: 'URL del endpoint para regresar la fechas mas actual de simulador planes cuentas'
+    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/getFechaPlanesCuentas' 
 
   ApiGatewayId:
     Description: 'ID del API Gateway'
