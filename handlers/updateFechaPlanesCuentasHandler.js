@@ -11,8 +11,20 @@ const dbConfig = {
   }
 };
 
+function esFechaHoraValida(fecha) {
+  // Formato esperado: YYYY-MM-DD HH:mm:ss
+  const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+
+  if (!regex.test(fecha)) return false;
+
+  const date = new Date(fecha.replace(' ', 'T'));
+
+  return !isNaN(date.getTime());
+}
+
+
 exports.handler = async (event) => {
-  console.log('SimuladorPlanesCuentas GET - Event:', JSON.stringify(event, null, 2));
+  console.log('SimuladorPlanesCuentas UPDATE - Event:', JSON.stringify(event, null, 2));
 
   const headers = {
     'Content-Type': 'application/json',
@@ -44,13 +56,27 @@ exports.handler = async (event) => {
     };
   }
 
-  if (!body.idflujo) {
+  const { idFlujo, fecha } = body;
+
+  if (!idFlujo || !fecha) {
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: 'Campo requerido: idflujo' })
+      body: JSON.stringify({
+        error: 'Campos requeridos: idflujo, fecha'
+      })
     };
   }
+
+  if (!esFechaHoraValida(body.fecha)) {
+    return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+        error: 'Formato de fecha inválido. Usa YYYY-MM-DD HH:mm:ss'
+        })
+    };
+    }
 
   const client = new Client(dbConfig);
 
@@ -58,22 +84,19 @@ exports.handler = async (event) => {
     await client.connect();
 
     const query = `
-      SELECT 
-        TO_CHAR(fecha_creacion, 'YYYY-MM-DD HH24:MI:SS') AS fecha_creacion
-      FROM public.simulador_planes_cuentas
+      UPDATE public.simulador_planes_cuentas
+      SET fecha_creacion = $2
       WHERE id_promociones_ttp = $1
-      ORDER BY fecha_creacion DESC
-      LIMIT 1
     `;
 
-    const result = await client.query(query, [body.idflujo]);
+    const result = await client.query(query, [idFlujo, fecha]);
 
-    if (result.rows.length === 0) {
+    if (result.rowCount === 0) {
       return {
         statusCode: 404,
         headers,
         body: JSON.stringify({
-          message: `No hay registros para idflujo ${body.idflujo}`
+          message: `No se encontró el idflujo ${idFlujo}`
         })
       };
     }
@@ -82,19 +105,19 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        message: "Fecha obtenida correctamente",
-        fecha_creacion: result.rows[0].fecha_creacion
+        message: 'Fecha actualizada correctamente',
+        idFlujo,
+        fecha
       })
     };
 
-
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        error: "Error interno del servidor",
+        error: 'Error interno del servidor',
         details: error.message
       })
     };

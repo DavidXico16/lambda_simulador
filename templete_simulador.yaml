@@ -16,7 +16,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: "lambdasttp"
-        S3Key: "Simulador/js006.zip"
+        S3Key: "Simulador/js004.zip"
       Timeout: 30
       Environment:
         Variables:
@@ -1024,6 +1024,50 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Access-Control-Allow-Methods: true
 
+# ==================== UPDATE  FECHA SIMULADOR PLANES CUENTAS  ====================
+  UpdateFechaPlanesResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: 'updateFechaPlanesCuentas'
+
+  UpdateFechaPlanesMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UpdateFechaPlanesResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostgresLambda.Arn}/invocations'
+
+  UpdateFechaPlanesOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UpdateFechaPlanesResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
   # Configuración CORS global
   GatewayResponse:
     Type: AWS::ApiGateway::GatewayResponse
@@ -1083,6 +1127,8 @@ Resources:
       - GetPlanesPorDiaOptionsMethod
       - GeFechaPlanesMethod
       - GeFechaPlanesOptionsMethod
+      - UpdateFechaPlanesMethod
+      - UpdateFechaPlanesOptionsMethod
     Properties:
       RestApiId: !Ref ApiGateway
       StageName: !Ref EnvironmentName
@@ -1169,6 +1215,10 @@ Outputs:
   GetFechaPlanesCuentasApiUrl:
     Description: 'URL del endpoint para regresar la fechas mas actual de simulador planes cuentas'
     Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/getFechaPlanesCuentas' 
+
+  UpdateFechaPlanesCuentasApiUrl:
+    Description: 'URL del endpoint para actualizar la fechas del simulador planes cuentas'
+    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/updateFechaPlanesCuentas' 
 
   ApiGatewayId:
     Description: 'ID del API Gateway'

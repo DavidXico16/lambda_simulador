@@ -11,16 +11,27 @@ const dbConfig = {
   }
 };
 
-// Convierte dd/mm/yyyy → yyyy-mm-dd
+// Convierte dd/mm/yyyy o dd/mm/yyyy HH:mm:ss → yyyy-mm-dd HH:mm:ss
 function convertirFecha(fecha) {
   if (!fecha) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
-  const partes = fecha.split('/');
-  if (partes.length === 3) {
-    return `${partes[2]}-${partes[1]}-${partes[0]}`;
+
+  // Si ya viene en formato ISO (Postgres friendly)
+  if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+    return fecha;
   }
+
+  // dd/mm/yyyy o dd/mm/yyyy HH:mm:ss
+  const [fechaParte, horaParte] = fecha.split(' ');
+  const partes = fechaParte.split('/');
+
+  if (partes.length === 3) {
+    const fechaISO = `${partes[2]}-${partes[1]}-${partes[0]}`;
+    return horaParte ? `${fechaISO} ${horaParte}` : `${fechaISO} 00:00:00`;
+  }
+
   return fecha;
 }
+
 
 exports.handler = async (event) => {
   console.log('SimuladorPlanesCuentas handler - Event:', JSON.stringify(event, null, 2));
@@ -128,7 +139,7 @@ exports.handler = async (event) => {
           INSERT INTO simulador_planes_cuentas
           (id_promociones_ttp, planes, cuentas, sub, nombre_editor, status,
            fecha_creacion, responsable_modificacion, fecha_mod)
-          VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8)
+          VALUES ($1, $2, $3, $4, $5, $6, $9, $7, $8)
           RETURNING id_simulador_planes_cuentas
         `;
         const values = [
@@ -139,6 +150,7 @@ exports.handler = async (event) => {
           body.nombreEditor,
           body.status,
           body.nombreEditor,
+          fechaModConvertida,
           fechaModConvertida
         ];
         await client.query(insertQuery, values);

@@ -25,9 +25,8 @@ const handlers = {
   'POST:/getErroresProcesamiento': require('./handlers/getErroresProcesamientoHandler'),
 
   'POST:/getPlanesPorDia': require('./handlers/PlanesPorDiaHandler'),
-  'POST:/getFechaPlanesCuentas': require('./handlers/getFechaPlanesCuentasHandler')
-
-  
+  'POST:/getFechaPlanesCuentas': require('./handlers/getFechaPlanesCuentasHandler'),
+  'POST:/updateFechaPlanesCuentas': require('./handlers/updateFechaPlanesCuentasHandler')
 };
 
 exports.handler = async (event) => {

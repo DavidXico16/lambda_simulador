@@ -6,14 +6,10 @@ const dbConfig = {
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 };
 
 exports.handler = async (event) => {
-  console.log('SimuladorPlanesCuentas GET - Event:', JSON.stringify(event, null, 2));
-
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
@@ -22,39 +18,11 @@ exports.handler = async (event) => {
   };
 
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ message: 'CORS preflight' })
-    };
+    return { statusCode: 200, headers, body: JSON.stringify({ message: "CORS preflight" }) };
   }
 
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Método no permitido. Usa POST.' })
-    };
-  }
-
-  let body;
-  try {
-    body = JSON.parse(event.body);
-  } catch (error) {
-    console.log('Error al parsear JSON:', error);
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: 'Cuerpo JSON inválido' })
-    };
-  }
-
-  if (!body.idflujo) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: 'Campo requerido: idflujo' })
-    };
+    return { statusCode: 405, headers, body: JSON.stringify({ error: "Método no permitido" }) };
   }
 
   const client = new Client(dbConfig);
@@ -62,48 +30,49 @@ exports.handler = async (event) => {
   try {
     await client.connect();
 
-    // 1) CONSULTA PARA PLANES (validando fecha ACTUAL)
-    const queryPlanes = `
-    SELECT planes, fecha_creacion
-    FROM simulador_planes_cuentas
-    WHERE id_promociones_ttp = $1
-        AND fecha_creacion::date = CURRENT_DATE
+    const queryAllPlanes = `
+        SELECT id_promociones_ttp, planes, fecha_creacion
+        FROM simulador_planes_cuentas
+        WHERE fecha_creacion::date = CURRENT_DATE
     `;
 
-    const planesResult = await client.query(queryPlanes, [body.idflujo]);
+    const planesResult = await client.query(queryAllPlanes);
 
-    if (!planesResult.rows || planesResult.rows.length === 0) {
-    return {
+    /*if (!planesResult.rows || planesResult.rows.length === 0) {
+      return {
         statusCode: 404,
         headers,
-        body: JSON.stringify({
-        message: `No hay registros de HOY (${new Date().toISOString().slice(0,10)}) para idflujo: ${body.idflujo}`,
-        data: {}
-        })
-    };
-    }
+        body: JSON.stringify({ message: "No hay registros hoy", data: [] })
+      };
+    }*/
 
-    console.log("planesResult");
-    console.log(planesResult.rows);
+    // -----------------------------
+    // CONTAR PLANES DE TODOS LOS REGISTROS
+    // -----------------------------
+    let totalPlanes = 0;
 
-    const listaPlanes = planesResult.rows.map(row => {
-    let planes = row.planes;
-    if (typeof planes === 'string') {
+    for (const row of planesResult.rows) {
+      let planes = row.planes;
+
+      if (typeof planes === "string") {
         try {
-        planes = JSON.parse(planes);
-        } catch (err) {
-        console.log("Error parseando JSON:", err);
-        planes = [];
+          planes = JSON.parse(planes);
+        } catch (e) {
+          console.log("Error parseando planes:", e);
+          planes = [];
         }
+      }
+
+      if (!Array.isArray(planes)) planes = [];
+
+      totalPlanes += planes.length;
     }
-    return planes;
-    });
 
-    const planesFlatten = listaPlanes.flat();
+    const fechaActual = new Date().toISOString().slice(0, 10);
 
-    const totalPlanes = planesFlatten.length;
-
-    // 2) CONSULTA PARA CUENTAS_VALIDAR
+    // -----------------------------------------
+    // 2) CONSULTA DE CUENTAS_VALIDAR (HOY)
+    // -----------------------------------------
     const queryCuentasValidar = `
       SELECT 
         cuentas_validar AS "cuentasValidar",
@@ -112,50 +81,86 @@ exports.handler = async (event) => {
         sub,
         nombre_editor AS "nombreEditor",
         status,
-        fecha_mod AS "fechaMod"
+        fecha_creacion AS "fechaMod"
       FROM simulador_cuentas_reloj_ciclo
-      WHERE id_promociones_ttp = $1
+      WHERE fecha_creacion::date = CURRENT_DATE
     `;
 
-    const cuentasResult = await client.query(queryCuentasValidar, [body.idflujo]);
+    const cuentasResult = await client.query(queryCuentasValidar);
 
-    let cuentasValidar = null;
+    // Contador total de cuentas_validar
+    let totalCuentasValidar = 0;
 
     if (cuentasResult.rows && cuentasResult.rows.length > 0) {
-      const r = cuentasResult.rows[0];
+      for (const row of cuentasResult.rows) {
 
-      cuentasValidar =
-        typeof r.cuentasValidar === 'string'
-          ? JSON.parse(r.cuentasValidar)
-          : r.cuentasValidar;
+        let valor = row.cuentasValidar;
+
+        if (typeof valor === 'string') {
+          try {
+            valor = JSON.parse(valor);
+          } catch (err) {
+            console.log("Error parseando cuentas_validar:", err);
+            valor = 0;
+          }
+        }
+
+        const numero = Number(valor) || 0;
+        totalCuentasValidar += numero;
+      }
     }
 
-    const totalCuentasValidar = Number(cuentasValidar) || 0;
-    const resultadoMultiplicacion = totalPlanes * totalCuentasValidar;
+    console.log("totalPlanes: ", totalPlanes);
+    console.log("totalCuentasValidar: ", totalCuentasValidar);
 
-    const fechaActual = new Date().toISOString().slice(0, 10);
+    let totalRegistrosXCuentasValidar = totalCuentasValidar * totalPlanes;
+    
+    console.log("totalRegistrosXCuentasValidar: ", totalRegistrosXCuentasValidar);
 
+
+    // ----------------------------------------------------
+    // CONSULTA: número_cuentas_max más reciente
+    // ----------------------------------------------------
+    const queryNumeroCuentas = `
+      SELECT numero_cuentas_max
+      FROM catalogo_gestion_simulador
+      ORDER BY fecha_ultima_modificacion DESC
+      LIMIT 1;
+    `;
+
+    const result = await client.query(queryNumeroCuentas);
+
+    /*if (result.rows.length === 0) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: "No se encontraron registros en catalogo_gestion_simulador"
+        })
+      };
+    }*/
+
+    let numeroCuentasMax = result.rows[0].numero_cuentas_max;
+
+
+    let datoRestante =  numeroCuentasMax - totalRegistrosXCuentasValidar;
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        message: 'Datos obtenidos correctamente',
-        conteo_cuentas: resultadoMultiplicacion,
+        message: "Datos obtenidos correctamente",
+        conteo_cuentas: datoRestante,
+        máximo_cuentas: numeroCuentasMax,
         fecha: fechaActual,
-        conteo_promociones: totalPlanes
+        conteo_promociones: totalPlanes,
       })
     };
 
   } catch (error) {
-    console.error('Error al consultar simulador_planes_cuentas:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({
-        error: 'Error interno del servidor',
-        details: error.message
-      })
+      body: JSON.stringify({ error: "Error interno", details: error.message })
     };
   } finally {
     await client.end();
